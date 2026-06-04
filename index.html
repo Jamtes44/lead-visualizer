@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeadView // Visualizador en la Nube</title>
+    <title>LeadView // Dashboard Responsivo en la Nube</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header class="navbar">
-        <div class="logo">LeadView</div>
+        <div class="logo">LeadView 🌐</div>
         <nav>
             <button id="btn-ver-leads" class="nav-link active">Visualizador</button>
             <button id="btn-agregar-lead" class="nav-link">Agregar Cliente</button>
@@ -21,7 +21,7 @@
         <section id="section-visualizador" class="content-section">
             <div class="section-header">
                 <h2>Clientes Compartidos en la Nube</h2>
-                <input type="text" id="search-bar" placeholder="Buscar por nombre, tipo o ubicación...">
+                <input type="text" id="search-bar" placeholder="Buscar por nombre, tipo, estado o ubicación...">
             </div>
             
             <div id="leads-grid" class="leads-grid">
@@ -39,45 +39,58 @@
                     </div>
                     <div class="form-group">
                         <label for="lead-type">Tipo de Negocio *</label>
-                        <input type="text" id="lead-type" placeholder="Ej. Restaurante, Taller, Estudio" required>
+                        <input type="text" id="lead-type" placeholder="Ej. Restaurante, Taller" required>
                     </div>
                 </div>
 
                 <div class="form-group-row">
                     <div class="form-group">
-                        <label for="lead-rating">Puntuación *</label>
-                        <input type="number" id="lead-rating" min="0" max="5" step="0.1" placeholder="Ej. 4.5" required>
+                        <label for="lead-status">Estado Inicial *</label>
+                        <select id="lead-status" class="form-select" required>
+                            <option value="sin contactar">Sin Contactar</option>
+                            <option value="contactado">Contactado</option>
+                            <option value="oferta rechazada">Oferta Rechazada</option>
+                            <option value="proyecto en curso">Proyecto en Curso</option>
+                            <option value="proyecto finalizado">Proyecto Finalizado</option>
+                            <option value="cliente activo">Cliente Activo</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label for="lead-reviews">Cantidad de Reseñas *</label>
-                        <input type="number" id="lead-reviews" min="0" placeholder="Ej. 120" required>
+                    <div class="form-group-row-inner">
+                        <div class="form-group">
+                            <label for="lead-rating">Puntuación *</label>
+                            <input type="number" id="lead-rating" min="0" max="5" step="0.1" placeholder="4.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lead-reviews">Reseñas *</label>
+                            <input type="number" id="lead-reviews" min="0" placeholder="120" required>
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="lead-address">Dirección Física *</label>
-                    <input type="text" id="lead-address" placeholder="Ej. Av. Principal #123" required>
+                    <input type="text" id="lead-address" required>
                 </div>
 
                 <div class="form-group-row">
                     <div class="form-group">
                         <label for="lead-location">Ubicación (Ciudad / Zona) *</label>
-                        <input type="text" id="lead-location" placeholder="Ej. Bogotá / Chapinero" required>
+                        <input type="text" id="lead-location" required>
                     </div>
                     <div class="form-group">
                         <label for="lead-maps">Enlace de Google Maps *</label>
-                        <input type="url" id="lead-maps" placeholder="https://maps.app.goo.gl/..." required>
+                        <input type="url" id="lead-maps" required>
                     </div>
                 </div>
 
                 <div class="form-group-row">
                     <div class="form-group">
                         <label for="lead-phone">Número de Contacto</label>
-                        <input type="tel" id="lead-phone" placeholder="Ej. +573001234567">
+                        <input type="tel" id="lead-phone">
                     </div>
                     <div class="form-group">
                         <label for="lead-email">Correo Electrónico (Opcional)</label>
-                        <input type="email" id="lead-email" placeholder="Ej. contacto@negocio.com">
+                        <input type="email" id="lead-email">
                     </div>
                 </div>
 

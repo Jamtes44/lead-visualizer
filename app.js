@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Credenciales integradas del proyecto del usuario
 const firebaseConfig = {
     apiKey: "AIzaSyBfu8atBkW0-37cbRsU89LN-91wZ4NLBQo",
     authDomain: "lead-visualizer.firebaseapp.com",
@@ -11,14 +10,10 @@ const firebaseConfig = {
     appId: "1:384101381800:web:f5a66f5a14202da007f49d"
 };
 
-// Inicialización de la capa de servicios de Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// Colección estandarizada en singular para almacenamiento persistente
 const leadCollection = collection(db, "lead");
 
-// Elementos de captura de la interfaz
 const btnVerLeads = document.getElementById('btn-ver-leads');
 const btnAgregarLead = document.getElementById('btn-agregar-lead');
 const sectionVisualizador = document.getElementById('section-visualizador');
@@ -27,9 +22,9 @@ const leadForm = document.getElementById('lead-form');
 const leadsGrid = document.getElementById('leads-grid');
 const searchBar = document.getElementById('search-bar');
 
-let localLeadsMemory = []; // Caché en memoria para evitar llamadas redundantes en filtrados masivos
+let localLeadsMemory = [];
 
-// --- NAVEGACIÓN Y FLUJO DE PANTALLAS ---
+// --- NAVEGACIÓN ---
 btnVerLeads.addEventListener('click', () => {
     switchSection(sectionVisualizador, btnVerLeads);
     fetchLeadsFromCloud(); 
@@ -44,15 +39,13 @@ function switchSection(targetSection, activeBtn) {
     sectionFormulario.classList.add('hidden');
     btnVerLeads.classList.remove('active');
     btnAgregarLead.classList.remove('active');
-
     targetSection.classList.remove('hidden');
     activeBtn.classList.add('active');
 }
 
-// --- CONSULTA ASÍNCRONA A CLOUD FIRESTORE ---
+// --- LEER DE LA NUBE ---
 async function fetchLeadsFromCloud() {
     try {
-        // Estructura de consulta ordenando cronológicamente de forma descendente
         const q = query(leadCollection, orderBy("createdat", "desc"));
         const querySnapshot = await getDocs(q);
         
@@ -63,27 +56,33 @@ async function fetchLeadsFromCloud() {
 
         renderLeads(localLeadsMemory);
     } catch (error) {
-        console.error("Error obteniendo datos: ", error);
-        leadsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: red;">Error al sincronizar con la base de datos distribuida o faltan configurar Reglas de Prueba.</p>`;
+        console.error("Error: ", error);
+        leadsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: red;">Error al cargar datos de Firestore.</p>`;
     }
 }
 
-// --- RENDERIZACIÓN DINÁMICA DE TARJETAS ---
+// --- RENDERIZAR TARJETAS ---
 function renderLeads(leadsToRender) {
     leadsGrid.innerHTML = '';
 
     if (leadsToRender.length === 0) {
-        leadsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No existen clientes potenciales registrados en el sistema.</p>`;
+        leadsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No hay registros.</p>`;
         return;
     }
 
     leadsToRender.forEach(lead => {
         const card = document.createElement('div');
         card.classList.add('lead-card');
+        
+        // Convertir espacios del estado en guiones para la clase CSS (ej: "proyecto en curso" -> "proyecto-en-curso")
+        const statusClass = lead.status.replace(/\s+/g, '-');
 
         card.innerHTML = `
             <div>
-                <span class="lead-tag">${lead.type}</span>
+                <div class="card-top">
+                    <span class="lead-tag">${lead.type}</span>
+                    <span class="status-badge status-${statusClass}">${lead.status}</span>
+                </div>
                 <h3>${lead.name}</h3>
                 <div class="rating-box">⭐ ${lead.rating} <span>(${lead.reviews} reseñas)</span></div>
                 <div class="lead-info">
@@ -93,25 +92,67 @@ function renderLeads(leadsToRender) {
                     ${lead.email ? `<p>✉️ ${lead.email}</p>` : ''}
                 </div>
             </div>
-            <div class="lead-actions">
-                <a href="${lead.maps}" target="_blank" class="btn-maps">Ver en Google Maps</a>
+            
+            <div>
+                <div class="status-selector-container">
+                    <label>Actualizar Estado:</label>
+                    <select class="card-status-select" data-id="${lead.id}">
+                        <option value="sin contactar" ${lead.status === 'sin contactar' ? 'selected' : ''}>Sin Contactar</option>
+                        <option value="contactado" ${lead.status === 'contactado' ? 'selected' : ''}>Contactado</option>
+                        <option value="oferta rechazada" ${lead.status === 'oferta rechazada' ? 'selected' : ''}>Oferta Rechazada</option>
+                        <option value="proyecto en curso" ${lead.status === 'proyecto en curso' ? 'selected' : ''}>Proyecto en Curso</option>
+                        <option value="proyecto finalizado" ${lead.status === 'proyecto finalizado' ? 'selected' : ''}>Proyecto Finalizado</option>
+                        <option value="cliente activo" ${lead.status === 'cliente activo' ? 'selected' : ''}>Cliente Activo</option>
+                    </select>
+                </div>
+                <div class="lead-actions">
+                    <a href="${lead.maps}" target="_blank" class="btn-maps">Ver en Maps</a>
+                </div>
             </div>
         `;
         leadsGrid.appendChild(card);
     });
+
+    // Vincular eventos a los selectores de cambio de estado de cada tarjeta
+    document.querySelectorAll('.card-status-select').forEach(select => {
+        select.addEventListener('change', async (e) => {
+            const leadId = e.target.getAttribute('data-id');
+            const newStatus = e.target.value;
+            await updateLeadStatus(leadId, newStatus);
+        });
+    });
 }
 
-// --- ESCRITURA Y PERSISTENCIA DE NUEVOS CLIENTES ---
+// --- ACTUALIZAR ESTADO EN EN TIEMPO REAL ---
+async function updateLeadStatus(id, newStatus) {
+    try {
+        const leadRef = doc(db, "lead", id);
+        await updateDoc(leadRef, {
+            status: newStatus
+        });
+        
+        // Actualizar memoria local sin recargar de la nube por rendimiento
+        const leadIndex = localLeadsMemory.findIndex(l => l.id === id);
+        if(leadIndex !== -1) {
+            localLeadsMemory[leadIndex].status = newStatus;
+        }
+        renderLeads(localLeadsMemory); // Volver a pintar para refrescar los badges de color
+    } catch (error) {
+        alert("Error al actualizar estado: " + error.message);
+    }
+}
+
+// --- GUARDAR NUEVO LEAD ---
 leadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btnSave = document.getElementById('btn-save');
-    btnSave.innerText = "Sincronizando con la nube...";
+    btnSave.innerText = "Guardando...";
     btnSave.disabled = true;
 
-    // Normalización de datos antes del envío
     const newLead = {
         name: document.getElementById('lead-name').value,
         type: document.getElementById('lead-type').value,
+        status: document.getElementById('lead-status').value,
         rating: parseFloat(document.getElementById('lead-rating').value),
         reviews: parseInt(document.getElementById('lead-reviews').value, 10),
         address: document.getElementById('lead-address').value,
@@ -125,25 +166,25 @@ leadForm.addEventListener('submit', async (e) => {
     try {
         await addDoc(leadCollection, newLead);
         leadForm.reset();
-        btnVerLeads.click(); // Retorno automático a la pantalla principal
+        btnVerLeads.click();
     } catch (error) {
-        alert("Ocurrió un error en la persistencia web: " + error.message);
+        alert("Error al guardar: " + error.message);
     } finally {
         btnSave.innerText = "Guardar Cliente en la Nube";
         btnSave.disabled = false;
     }
 });
 
-// --- FILTRO INSTANTÁNEO EN CLIENTE ---
+// --- FILTRO DE BÚSQUEDA AVANZADA ---
 searchBar.addEventListener('input', (e) => {
     const searchTerm = e.target.value.toLowerCase();
     const filteredLeads = localLeadsMemory.filter(lead => 
         lead.name.toLowerCase().includes(searchTerm) || 
         lead.type.toLowerCase().includes(searchTerm) ||
-        lead.location.toLowerCase().includes(searchTerm)
+        lead.location.toLowerCase().includes(searchTerm) ||
+        lead.status.toLowerCase().includes(searchTerm)
     );
     renderLeads(filteredLeads);
 });
 
-// Inicialización automática de la vista distribuida
 fetchLeadsFromCloud();
