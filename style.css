@@ -6,8 +6,6 @@
     --accent: #4f46e5;
     --accent-hover: #4338ca;
     --border-color: #e5e7eb;
-
-    /* Colores de los Estados */
     --status-sin-contactar: #9ca3af;
     --status-contactado: #3b82f6;
     --status-rechazada: #ef4444;
@@ -96,7 +94,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* Grilla Responsiva */
 .leads-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -137,7 +134,6 @@ body {
     font-weight: 600;
 }
 
-/* Clases Dinámicas de Estado */
 .status-badge {
     font-size: 0.7rem;
     font-weight: 700;
@@ -174,7 +170,6 @@ body {
     gap: 0.4rem;
 }
 
-/* Selector de estado interno de la tarjeta */
 .status-selector-container {
     margin-top: 1rem;
     padding-top: 0.75rem;
@@ -210,7 +205,6 @@ body {
     font-weight: 500;
 }
 
-/* Estructura del Formulario */
 .form-group-row {
     display: flex;
     gap: 1rem;
@@ -255,7 +249,6 @@ body {
     width: 100%;
 }
 
-/* --- MEDIA QUERIES PARA RESPONSIVE COMPLETO --- */
 @media (max-width: 768px) {
     .navbar { padding: 1rem; }
     .form-group-row { flex-direction: column; gap: 0; }

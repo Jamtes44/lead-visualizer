@@ -74,7 +74,6 @@ function renderLeads(leadsToRender) {
         const card = document.createElement('div');
         card.classList.add('lead-card');
         
-        // Convertir espacios del estado en guiones para la clase CSS (ej: "proyecto en curso" -> "proyecto-en-curso")
         const statusClass = lead.status.replace(/\s+/g, '-');
 
         card.innerHTML = `
@@ -113,7 +112,6 @@ function renderLeads(leadsToRender) {
         leadsGrid.appendChild(card);
     });
 
-    // Vincular eventos a los selectores de cambio de estado de cada tarjeta
     document.querySelectorAll('.card-status-select').forEach(select => {
         select.addEventListener('change', async (e) => {
             const leadId = e.target.getAttribute('data-id');
@@ -131,12 +129,11 @@ async function updateLeadStatus(id, newStatus) {
             status: newStatus
         });
         
-        // Actualizar memoria local sin recargar de la nube por rendimiento
         const leadIndex = localLeadsMemory.findIndex(l => l.id === id);
         if(leadIndex !== -1) {
             localLeadsMemory[leadIndex].status = newStatus;
         }
-        renderLeads(localLeadsMemory); // Volver a pintar para refrescar los badges de color
+        renderLeads(localLeadsMemory); 
     } catch (error) {
         alert("Error al actualizar estado: " + error.message);
     }
